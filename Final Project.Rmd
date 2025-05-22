@@ -1,0 +1,96 @@
+---
+title: "Final Project"
+format: pdf
+date: "2025-05-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(KMsurv)
+library(survival)
+library(survminer)
+data(burn)
+```
+
+# 1 Introduction
+
+In this analysis, we examine the **burn** dataset from the `KMsurv` package, which contains clinical records of 154 burn patients including time to staphylococcus aureus infection and censoring indicators.  
+
+We define the failure time as `T3` (days until Staphylococcus aureus infection or censoring) and the event indicator `D3` (1 = infection, 0 = censored). Covariates include:
+
+- **Z1**: Treatment type (0 = routine bathing, 1 = body cleansing)
+- **Z2**: Gender (0 = male, 1 = female)
+- **Z3**: Race (0 = nonwhite, 1 = white)
+- **Z4**: Percent total surface area burned
+- **Z5-Z10**: Indicators for burn site in head, buttock, trunk, upper leg, lower leg, respiratory tract (0/1)
+- **Z11**: Burn type (1 = chemical, 2 = scald, 3 = electric, 4 = flame)
+
+The main scientific question motivating this study is: 
+*How does the cleansing treatment affect the hazard of Staphylococcus aureus infection, accounting for patient and burn characteristics?*
+\newpage
+
+# 2 Model Fitting
+
+We start with univariate Kaplan-Meier estimation and then fit multivariable Cox proportional hazards models, using AIC for forward stepwise selection to identify the most influential covariates.
+
+## 2.1 Kaplan-Meier Estimate
+
+```{r}
+burn.surv <- Surv(time = burn$T3, event = burn$D3)
+ggsurvplot(
+  survfit(burn.surv ~ 1),
+  surv.median.line = "hv",
+  data = burn,
+  xlab = "Time (Days)",
+  ylab = "Survival Probability",
+  title = "KM Estimate of Time to Staphylococcus Aureus Infection"
+)
+```
+The KM curve estimates the survival probability for time to Staphylocococcus aureus infection across all patients.  The median survival time, where the probability drops to 50%, is approximately 51 days.  This provides a baseline understanding of infetion risk before adjusting for covariates.
+
+## 2.2 Cox Proportional Hazards Model
+
+### 2.2.1 Full Model
+
+```{r}
+cox_full <- coxph(burn.surv ~ Z1 + Z2 + Z3 + Z4 + Z5 + Z6 + Z7 + Z8 + Z9 + Z10 + as.factor(Z11), data = burn)
+summary(cox_full)
+```
+The full Cox model assessed factors influencing time to Staphylococcus aureus infection in burn patients. Key results include:
+
+Treatment (Z1): Hazard ratio (HR) = 0.521 (95% CI: 0.276–0.982, p = 0.044). Body cleansing reduces infection risk by 47.9% compared to routine bathing, a significant finding.
+
+Race (Z3): HR = 8.577 (95% CI: 1.117–65.875, p = 0.039). White patients have a higher infection risk than nonwhite patients, warranting further study.
+
+Burn Type (Z11): Electric burns (Z11=3) show a marginally significant higher risk (HR = 8.957, p = 0.052) vs chemical burns.
+
+Other factors (e.g., gender, burn extent, burn sites) were not significant. Model fit is good (concordance = 0.739), with significant overall tests (p ≤ 0.05). Body cleansing appears protective, while race differences need exploration.
+
+### 2.2.2 Stepwise Selection by AIC
+
+```{r}
+cox_step <- step(cox_full, direction = "forward", k = 2)
+summary(cox_step)
+```
+The retention of all covariates in the stepwise selection process highlights their combined importance in predicting infection risk, even if only Z1 and Z3 are individually significant. The consistent significance of body cleansing (Z1) reinforces its protective effect, while race (Z3) emerges as a key risk factor. The marginal significance of electric burns (Z11=3) and the potential violations of the proportional hazards assumption for Z9 and Z10 suggest areas for further investigation, possibly through stratified models or time-varying effects. Overall, the model provides a robust framework for understanding infection risk in burn patients, with a good fit and reliable predictors.
+
+# 3 Checking Proportional Hazards Assumptions
+
+We use Schoenfeld residuals and the global test to assess the PH assumption:
+
+```{r}
+zph_test <- cox.zph(cox_step)
+print(zph_test)
+plot(zph_test)
+```
+
+add analysis here
+
+# 4 Time-Varying Treatment Effect
+
+
+```{r}
+#continue here
+```
+
+# 5 Conclusions
