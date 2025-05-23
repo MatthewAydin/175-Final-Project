@@ -71,6 +71,9 @@ Other factors (e.g., gender, burn extent, burn sites) were not significant. Mode
 ```{r}
 cox_step <- step(cox_full, direction = "forward", k = 2)
 summary(cox_step)
+
+cox_step2 <- step(coxph(burn.surv ~ 1, data = burn), scope = ~ Z1 + Z2 + Z3 + Z4 + Z5 + Z6 + Z7 + Z8 + Z9 + Z10 + as.factor(Z11), direction = "forward", k = 2)
+print(cox_step2)
 ```
 The retention of all covariates in the stepwise selection process highlights their combined importance in predicting infection risk, even if only Z1 and Z3 are individually significant. The consistent significance of body cleansing (Z1) reinforces its protective effect, while race (Z3) emerges as a key risk factor. The marginal significance of electric burns (Z11=3) and the potential violations of the proportional hazards assumption for Z9 and Z10 suggest areas for further investigation, possibly through stratified models or time-varying effects. Overall, the model provides a robust framework for understanding infection risk in burn patients, with a good fit and reliable predictors.
 
