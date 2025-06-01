@@ -35,7 +35,7 @@ We start with univariate Kaplan-Meier estimation and then fit multivariable Cox 
 
 ## 2.1 Kaplan-Meier Estimate
 
-```{r}
+```{r KM Estimate, fig.cap = "Kaplan-Meier Survival Curve Estimate of Time (Days) to Staphylococcus Aureus Infection"}
 burn.surv <- Surv(time = burn$T3, event = burn$D3)
 ggsurvplot(
   survfit(burn.surv ~ 1),
@@ -81,9 +81,13 @@ The retention of Z3 (Race), Z11 (Burn Type), Z1 (Treatment Type), and Z2 (Gender
 
 # 3 Checking Proportional Hazards Assumptions
 
-We use Schoenfeld residuals and the global test to assess the PH assumption:
+In this section, we will be using techniques (log-log plots, Cox ZPH test, and Schoenfield Residuals) to check whether the proportional hazards (PH) assumption is being met by the covariates that are important in the model.
 
-```{r Log-log plots}
+## 3.1 Log-log Plots
+
+First, we will visualize the log-log plots for each covariate in the model:
+
+```{r Log-log plot (Z1), fig.cap = "Log(-log) Survival Curves by Treatment Type (Z1) to Evaluate PH Assumption"}
 # Log-log plot for Z1 (Treatment Type)
 burn.fit1 <- survfit(burn.surv ~ Z1, data = burn)
 ggsurvplot(burn.fit1,
@@ -91,7 +95,11 @@ ggsurvplot(burn.fit1,
            fun = "cloglog") +
   labs(title = "Log(-log) of Survival Curve by Treatment (Z1)",
        x = "Time (Days) to straphylocous aureaus infection")
+```
 
+The curves for the two treatment groups appear generally parallel over time. This suggest that the PH assumption is reasonable for treatment type (`Z1`).
+
+```{r Log-log plot (Z2), fig.cap = "Log(-log) Survival Curves by Gender (Z2) to Evaluate PH Assumption"}
 # Log-log plot for Z2 (gender)
 burn.fit2 <- survfit(burn.surv ~ Z2, data = burn)
 ggsurvplot(burn.fit2,
@@ -99,7 +107,11 @@ ggsurvplot(burn.fit2,
            fun = "cloglog") +
   labs(title = "Log(-log) of Survival Curve by Gender (Z2)",
        x = "Time (Days) to straphylocous aureaus infection")
+```
 
+Although the curves for the male and female groups show some divergence at the beginning and end time points, in the middle they look reasonably parallel. Therefore, this suggests that the PH assumption is reasonable for gender (`Z2`).
+
+```{r Log-log plot (Z3), fig.cap = "Log(-log) Survival Curves by Race (Z3) to Evaluate PH Assumption"}
 # Log-log plot for Z3 (race)
 burn.fit3 <- survfit(burn.surv ~ Z3, data = burn)
 ggsurvplot(burn.fit3,
@@ -107,7 +119,11 @@ ggsurvplot(burn.fit3,
            fun = "cloglog") +
   labs(title = "Log(-log) Survival Curve by Race (Z3)",
        x = "Time (Days) to straphylocous aureaus infection")
+```
 
+It is clear that the two curves are clearly not parallel, and show significant divergence over time. Therefore, this suggests a potential violation of the PH assumption for race (`Z3`).
+
+```{r Log-log plot (Z11), fig.cap = "Log(-log) Survival Curves by Burn Type (Z11) to Evaluate PH Assumption"}
 # Log-log plot for Z11 (burn type)
 burn.fit4 <- survfit(burn.surv ~ as.factor(Z11), data = burn)
 ggsurvplot(burn.fit4,
@@ -117,10 +133,33 @@ ggsurvplot(burn.fit4,
        x = "Time (Days) to straphylocous aureaus infection")
 ```
 
-```{r Schoenfield Plots}
+We can see that the four curves are not parallel. This can be seen by the curves `Scald` and `Flame` curve crossing, as well as the divergence of all the curves over time. Therefore, this suggests a potential violation of the PH assumption for burn type (`Z11`).
+
+In summary, the log-log plots demonstrated that two of the covariates potentially violated a PH assumption, race (`Z3`) and burn type (`Z11`). While the other two covariates, treatment type (`Z1`) and gender (`Z2`), reasonably satisfy the PH assumption.
+
+## 3.2 Cox ZPH Test
+
+Now, we will run the Cox ZPH test for correlation in the residuals for our covariates in the model. Although this test is more useful for continuous covariates, it is still useful for categorical covariates as well. 
+
+```{r Cox ZPH Test}
 # Cox ZPH test for correlation in the residuals
 zph_test <- cox.zph(cox_step)
-print(zph_test)
+print(zph_test) # displays results
+```
+
+The Cox ZPH test results show us that:
+
+- `Z1` produced a p-value of 0.501. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for treatment type (`Z1`). 
+
+- `Z2` produced a p-value of 0.209. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for gender (`Z2`).
+
+- `Z3` produced a p-value of 0.119. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for race (`Z3`).
+
+- `Z11` produced a p-value of 0.038. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for burn type (`Z11`).
+
+## 3.3 Schoenfield Residual Plots
+
+```{r Schoenfield Plots}
 plot(zph_test)
 ```
 
