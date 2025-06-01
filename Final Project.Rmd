@@ -155,7 +155,7 @@ The Cox ZPH test results show us that:
 
 - `Z3` produced a p-value of 0.119. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for race (`Z3`).
 
-- `Z11` produced a p-value of 0.038. This p-value is less than 0.05, indicating that we reject the null hypothesis. Therefore, this suggests the PH assumption is not reasonable for burn type (`Z11`).
+- `Z11` produced a p-value of 0.038. This p-value is less than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is not reasonable for burn type (`Z11`).
 
 ## 3.3 Schoenfield Residual Plots
 
@@ -163,13 +163,105 @@ The Cox ZPH test results show us that:
 plot(zph_test)
 ```
 
-add analysis here
+Z1 (Treatment Type): The residuals for Z1 show no clear trend or systematic pattern over time, with points scattered around zero. This aligns with the Cox ZPH test (p = 0.501) and log-log plot, confirming that the PH assumption is reasonable for treatment type.
 
-# 4 Time-Varying Treatment Effect
+Z2 (Gender): The residuals for Z2 appear relatively flat with minor fluctuations, consistent with the Cox ZPH test (p = 0.209) and the log-log plot, which showed reasonable parallelism. This suggests the PH assumption holds for gender.
+
+Z3 (Race): The residuals for Z3 exhibit a slight trend, with some indication of non-random variation over time. Although the Cox ZPH test (p = 0.119) did not reject the PH assumption at the 0.05 level, the log-log plot showed clear divergence, suggesting a potential violation. This warrants further investigation, possibly with a time-varying model.
+
+Z11 (Burn Type): The residuals for burn type levels (Z11=2, 3, 4) show more pronounced patterns. For electric burns (Z11=3), the residuals suggest a time-varying effect, with a noticeable trend over time, consistent with the Cox ZPH test (p = 0.038 for Z11). The log-log plot also showed non-parallel curves, particularly for scald and flame burns, confirming a violation of the PH assumption for burn type.
+
+
+# 4 Conclusions
+
+This study investigated the effect of body cleansing treatment (Z1) on the hazard of Staphylococcus aureus infection in burn patients, accounting for patient and burn characteristics. The final Cox proportional hazards model, selected via forward stepwise AIC, included treatment type (Z1), race (Z3), burn type (Z11), and gender (Z2) as predictors of time to infection.
+
+The primary finding addresses the scientific question: body cleansing (Z1 = 1) significantly reduces the hazard of Staphylococcus aureus infection compared to routine bathing (Z1 = 0), with a hazard ratio (HR) of 0.523 (95% CI: 0.291–0.940, p = 0.030). This indicates that body cleansing decreases the infection risk by approximately 47.7%, a statistically significant protective effect. This finding suggests that body cleansing should be considered a preferred treatment for burn patients to reduce infection risk.
+
+Additionally, race (Z3) was a significant predictor, with white patients (Z3 = 1) having a substantially higher infection risk than nonwhite patients (HR = 9.850, 95% CI: 1.318–73.643, p = 0.026). This unexpected result requires further investigation to understand potential biological or environmental factors driving this difference. Burn type (Z11) showed a marginally significant effect for electric burns (Z11 = 3) compared to chemical burns (HR = 7.901, 95% CI: 0.935–66.808, p = 0.058), suggesting a higher infection risk, though the wide confidence interval indicates uncertainty. Gender (Z2) was not significant (HR = 0.571, 95% CI: 0.263–1.242, p = 0.158), suggesting no strong evidence of a gender effect on infection risk.
+
+The model fit was robust, with a concordance of 0.719 (SE = 0.037) and significant overall tests (Likelihood ratio test: p = 0.0005; Wald test: p = 0.004; Score test: p = 0.001). However, the proportional hazards assumption was violated for burn type (Z11, Cox ZPH p = 0.038) and potentially for race (Z3, based on log-log plots), indicating that the effects of these covariates may vary over time.
+
+In conclusion, body cleansing is an effective intervention for reducing Staphylococcus aureus infection risk in burn patients. The significant effect of race and the marginal effect of electric burns highlight the need for further research into these factors, particularly considering time-varying effects to account for PH violations.
+
+# 5 Time-Varying Treatment Effect
 
 
 ```{r}
-#continue here
+cox_tvc <- coxph(burn.surv ~ Z1 + Z2 + Z3 + as.factor(Z11) + tt(as.factor(Z11)),
+                 data = burn,
+                 tt = function(x, t, ...) {
+                   x1 <- (x == 2) * log(t)
+                   x2 <- (x == 3) * log(t)
+                   x3 <- (x == 4) * log(t)
+                   cbind(scald = x1, electric = x2, flame = x3)
+                 })
+summary(cox_tvc)
+
 ```
 
-# 5 Conclusions
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+
+library(ggplot2)
+
+coefs <- c(
+  base_scald = 10.4884300, 
+  base_electric = 10.8813805, 
+  base_flame = 7.2799178,
+  beta_scald = -3.7500636,
+  beta_electric = -3.9035096,
+  beta_flame = -2.3641061
+)
+
+time_seq <- seq(1, 60, by = 0.5)
+
+HR_scald <- exp(coefs["base_scald"] + coefs["beta_scald"] * log(time_seq))
+HR_electric <- exp(coefs["base_electric"] + coefs["beta_electric"] * log(time_seq))
+HR_flame <- exp(coefs["base_flame"] + coefs["beta_flame"] * log(time_seq))
+
+plot_data <- data.frame(
+  Time = rep(time_seq, 3),
+  HR = c(HR_scald, HR_electric, HR_flame),
+  BurnType = rep(c("Scald", "Electric", "Flame"), each = length(time_seq))
+)
+
+ggplot(plot_data, aes(x = Time, y = HR, color = BurnType)) +
+  geom_line(linewidth = 1.2) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "gray40") +
+  scale_y_log10(
+    limits = c(0.1, 100000),
+    breaks = c(0.1, 1, 10, 100, 1000, 10000, 100000),
+    labels = scales::comma
+  ) +
+  annotation_logticks(sides = "l") +
+  labs(
+    title = "Time-Varying Hazard Ratios for Burn Types",
+    subtitle = "Reference: Chemical Burns (Z11=1)",
+    y = "Hazard Ratio (log scale)",
+    x = "Time Since Burn Injury (Days)",
+    color = "Burn Type",
+    caption = "Based on time-varying Cox model: HR(t) = exp(β₀ + β₁*log(t))"
+  ) +
+  scale_color_manual(values = c("#FF7F00", "#377EB8", "#4DAF4A")) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "bottom",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold"),
+    axis.title = element_text(face = "bold")
+  ) +
+  guides(color = guide_legend(title.position = "top"))
+```
+
+The Cox proportional hazards model with time-varying coefficients was utilized to examine the temporal dynamics of the hazard of Staphylococcus aureus infection following burn injuries, with burn type (Z11) as the primary covariate of interest. Burn types analyzed included scald (Z11=2), electric (Z11=3), and flame (Z11=4), each compared to the reference category of chemical burns (Z11=1). The model incorporated time-invariant covariates—treatment type (Z1), gender (Z2), and race (Z3)—to account for their fixed effects on infection risk. This approach was adopted to address potential violations of the proportional hazards assumption detected in preliminary analyses, allowing the hazard ratios (HRs) for burn types to vary logarithmically with time since injury.
+
+The Cox model with time-varying coefficients reveals that the hazard of Staphylococcus aureus infection associated with scald, electric, and flame burns, relative to chemical burns, is markedly elevated immediately following injury but diminishes substantially over time. The baseline hazard ratios, exceeding 10,000 at t = 0, decline to values below 1 within 20 to 30 days, suggesting that the heightened risk may be confined to the early post-injury phase. This temporal pattern could reflect underlying differences in wound characteristics, healing processes, or other time-dependent factors. However, the absence of statistical significance for the time-varying coefficients (p > 0.17) and the imprecision of the estimates—evidenced by large standard errors and wide confidence intervals—limit the conclusiveness of these findings. These limitations are likely attributable to insufficient statistical power, particularly for less prevalent burn types such as electric burns.
+
+Conversely, the fixed effects of treatment type (Z1) and race (Z3) demonstrate statistical significance and reliability. The hazard reduction of 49% associated with body cleansing (HR = 0.510, p = 0.0243) constitutes a robust finding with clear clinical relevance. Similarly, the elevated hazard among white patients (HR = 10.02, p = 0.0248) identifies a significant demographic disparity requiring further exploration, despite the uncertainty reflected in the confidence interval.
+
+In conclusion, the time-varying Cox model offers a sophisticated framework for investigating temporal variations in infection risk across burn types, providing a potential resolution to violations of the proportional hazards assumption. Nonetheless, the primary substantive contribution of this analysis lies in the confirmation of treatment efficacy, with body cleansing emerging as a critical intervention for reducing infection risk. The suggestive but non-significant time-varying effects underscore the need for further research, ideally with larger datasets or alternative statistical approaches, to validate and refine these preliminary insights into the dynamics of burn-related infection risk.
+
+# Bibliography
+
+Klein and Moeschberger (1997) Survival Analysis Techniques for Censored and Truncated Data, Springer.
+Ichida et al. Stat. Med. 12 (1993): 301–310
