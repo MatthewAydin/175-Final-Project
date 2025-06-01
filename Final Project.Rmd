@@ -155,7 +155,7 @@ The Cox ZPH test results show us that:
 
 - `Z3` produced a p-value of 0.119. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for race (`Z3`).
 
-- `Z11` produced a p-value of 0.038. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for burn type (`Z11`).
+- `Z11` produced a p-value of 0.038. This p-value is less than 0.05, indicating that we reject the null hypothesis. Therefore, this suggests the PH assumption is not reasonable for burn type (`Z11`).
 
 ## 3.3 Schoenfield Residual Plots
 
