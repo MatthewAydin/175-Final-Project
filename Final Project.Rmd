@@ -97,7 +97,7 @@ ggsurvplot(burn.fit1,
        x = "Time (Days) to straphylocous aureaus infection")
 ```
 
-The curves for the two treatment groups appear generally parallel over time. This suggest that the PH assumption is reasonable for treatment type (`Z1`).
+The curves for the two treatment groups appear generally parallel over time. This suggest that the PH assumption is reasonable for treatment type (Z1).
 
 ```{r Log-log plot (Z2), fig.cap = "Log(-log) Survival Curves by Gender (Z2) to Evaluate PH Assumption"}
 # Log-log plot for Z2 (gender)
@@ -109,7 +109,7 @@ ggsurvplot(burn.fit2,
        x = "Time (Days) to straphylocous aureaus infection")
 ```
 
-Although the curves for the male and female groups show some divergence at the beginning and end time points, in the middle they look reasonably parallel. Therefore, this suggests that the PH assumption is reasonable for gender (`Z2`).
+Although the curves for the male and female groups show some divergence at the beginning and end time points, in the middle they look reasonably parallel. Therefore, this suggests that the PH assumption is reasonable for gender (Z2).
 
 ```{r Log-log plot (Z3), fig.cap = "Log(-log) Survival Curves by Race (Z3) to Evaluate PH Assumption"}
 # Log-log plot for Z3 (race)
@@ -121,7 +121,7 @@ ggsurvplot(burn.fit3,
        x = "Time (Days) to straphylocous aureaus infection")
 ```
 
-It is clear that the two curves are clearly not parallel, and show significant divergence over time. Therefore, this suggests a potential violation of the PH assumption for race (`Z3`).
+It is clear that the two curves are clearly not parallel, and show significant divergence over time. Therefore, this suggests a potential violation of the PH assumption for race (Z3).
 
 ```{r Log-log plot (Z11), fig.cap = "Log(-log) Survival Curves by Burn Type (Z11) to Evaluate PH Assumption"}
 # Log-log plot for Z11 (burn type)
@@ -133,9 +133,9 @@ ggsurvplot(burn.fit4,
        x = "Time (Days) to straphylocous aureaus infection")
 ```
 
-We can see that the four curves are not parallel. This can be seen by the curves `Scald` and `Flame` curve crossing, as well as the divergence of all the curves over time. Therefore, this suggests a potential violation of the PH assumption for burn type (`Z11`).
+We can see that the four curves are not parallel. This can be seen by the curves Scald and Flame crossing, as well as the divergence of all the curves over time. Therefore, this suggests a potential violation of the PH assumption for burn type (Z11).
 
-In summary, the log-log plots demonstrated that two of the covariates potentially violated a PH assumption, race (`Z3`) and burn type (`Z11`). While the other two covariates, treatment type (`Z1`) and gender (`Z2`), reasonably satisfy the PH assumption.
+In summary, the log-log plots demonstrated that two of the covariates potentially violated a PH assumption, race (Z3) and burn type (Z11). While the other two covariates, treatment type (Z1) and gender (Z2), reasonably satisfy the PH assumption.
 
 ## 3.2 Cox ZPH Test
 
@@ -149,25 +149,37 @@ print(zph_test) # displays results
 
 The Cox ZPH test results show us that:
 
-- `Z1` produced a p-value of 0.501. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for treatment type (`Z1`). 
+- Z1 produced a p-value of 0.501. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for treatment type (Z1). 
 
-- `Z2` produced a p-value of 0.209. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for gender (`Z2`).
+- Z2 produced a p-value of 0.209. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for gender (Z2).
 
-- `Z3` produced a p-value of 0.119. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for race (`Z3`).
+- Z3 produced a p-value of 0.119. This p-value is greater than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is reasonable for race (Z3).
 
-- `Z11` produced a p-value of 0.038. This p-value is less than 0.05, indicating that we fail to reject the null hypothesis. Therefore, this suggests the PH assumption is not reasonable for burn type (`Z11`).
+- Z11 produced a p-value of 0.038. This p-value is less than 0.05, indicating that we reject the null hypothesis. Therefore, this suggests the PH assumption is not reasonable for burn type (Z11).
 
 ## 3.3 Schoenfield Residual Plots
 
-```{r Schoenfield Plots}
-plot(zph_test)
+```{r Schoenfield Plot for Treatment Type (Z1), fig.cap = "Schoenfield Residuals for Treatment Type (Z1) to Evaluate PH Assumption"}
+plot(zph_test, var = "Z1")
 ```
 
 Z1 (Treatment Type): The residuals for Z1 show no clear trend or systematic pattern over time, with points scattered around zero. This aligns with the Cox ZPH test (p = 0.501) and log-log plot, confirming that the PH assumption is reasonable for treatment type.
 
+```{r Schoenfield Plot for Gender (Z2), fig.cap = "Schoenfield Residuals for Gender (Z2) to Evaluate PH Assumption"}
+plot(zph_test, var = "Z2")
+```
+
 Z2 (Gender): The residuals for Z2 appear relatively flat with minor fluctuations, consistent with the Cox ZPH test (p = 0.209) and the log-log plot, which showed reasonable parallelism. This suggests the PH assumption holds for gender.
 
+```{r Schoenfield Plot for Race (Z3), fig.cap = "Schoenfield Residuals for Race (Z3) to Evaluate PH Assumption"}
+plot(zph_test, var = "Z3")
+```
+
 Z3 (Race): The residuals for Z3 exhibit a slight trend, with some indication of non-random variation over time. Although the Cox ZPH test (p = 0.119) did not reject the PH assumption at the 0.05 level, the log-log plot showed clear divergence, suggesting a potential violation. This warrants further investigation, possibly with a time-varying model.
+
+```{r Schoenfield Plot for Burn Type (Z11), fig.cap = "Schoenfield Residuals for Burn Type (Z11) to Evaluate PH Assumption"}
+plot(zph_test, var = "as.factor(Z11)")
+```
 
 Z11 (Burn Type): The residuals for burn type levels (Z11=2, 3, 4) show more pronounced patterns. For electric burns (Z11=3), the residuals suggest a time-varying effect, with a noticeable trend over time, consistent with the Cox ZPH test (p = 0.038 for Z11). The log-log plot also showed non-parallel curves, particularly for scald and flame burns, confirming a violation of the PH assumption for burn type.
 
