@@ -1,5 +1,6 @@
 ---
-title: "Final Project"
+title: "PSTAT 175: Final Project"
+author: "Matthew Aydin, Angel Alcantara, Adam Sztonyk"
 format: pdf
 date: "2025-05-14"
 ---
