@@ -128,7 +128,7 @@ Residual plots for Z1 and Z2 show no trends (p = 0.501, 0.209), supporting PH. Z
 
 # 4 Time-Varying Treatment Effect
 
-To address the feedback on innovation and the time element of the intervention at T1, we model excision (D1) as a time-varying covariate (Exc), where Exc(t) = 0 before T1 and 1 after T1 for patients with D1=1, and 0 otherwise. We also explore its interacion with treatment (Z1).
+To address the feedback on innovation and the time element of the intervention at T1, we model excision (D1) as a time-varying covariate (Exc), where Exc(t) = 0 before T1 and 1 after T1 for patients with D1=1, and 0 otherwise. We also explore its interacion with treatment (Z1). We then do the same with Prophylactic antibiotic treatment (D2).
 
 ```{r}
 burn$id <- 1:nrow(burn)
@@ -141,7 +141,7 @@ cox_tv <- coxph(Surv(tstart, tstop, event) ~ Z1 + Z2 + Z3 + as.factor(Z11) + Exc
 summary(cox_tv)
 ```
 
-The model shows body cleansing reduces the hazard (HR = 0.524, p = 0.032) before adding excision as a time dependent covariate to the model. The excision effect (Exc) has an HR of 0.5689 (p = 0.3557), and the interaction Z1:Exc has an HR of 0.6508 (p = 0.5382), both non-significant, suggesting no strong evidence that excision modifies the treatment effect. A likelihood ratio test comparing this model to the stepwise model (AIC: 320.2 vs. 318.7) indicates no significant improvement (p > 0.05).
+The model shows body cleansing reduces the hazard (HR = 0.524, p = 0.032) before adding excision as a time dependent covariate to the model. The excision effect (Exc) has an HR of 0.5689 (p = 0.3557), and the interaction Z1:Exc has an HR of 0.6508 (p = 0.5382), both non-significant, suggesting no strong evidence that excision modifies the treatment effect.
 
 ```{r}
 burn$id <- 1:nrow(burn)
