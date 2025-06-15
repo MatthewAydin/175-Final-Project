@@ -141,11 +141,30 @@ cox_tv <- coxph(Surv(tstart, tstop, event) ~ Z1 + Z2 + Z3 + as.factor(Z11) + Exc
 summary(cox_tv)
 ```
 
-The model shows body cleansing reduces the hazard (HR = 0.524, p = 0.032) before excision. The excision effect (Exc) has an HR of 0.927 (p = 0.860), and the interaction Z1:Exc has an HR of 0.945 (p = 0.912), both non-significant, suggesting no strong evidence that excision modifies the treatment effect. A likelihood ratio test comparing this model to the stepwise model (AIC: 320.2 vs. 318.7) indicates no significant improvement (p > 0.05).
+The model shows body cleansing reduces the hazard (HR = 0.524, p = 0.032) before adding excision as a time dependent covariate to the model. The excision effect (Exc) has an HR of 0.5689 (p = 0.3557), and the interaction Z1:Exc has an HR of 0.6508 (p = 0.5382), both non-significant, suggesting no strong evidence that excision modifies the treatment effect. A likelihood ratio test comparing this model to the stepwise model (AIC: 320.2 vs. 318.7) indicates no significant improvement (p > 0.05).
+
+```{r}
+burn$id <- 1:nrow(burn)
+burntre_tv <- tmerge(burn_base, burn_base, id = id, tstop = T3, event = event(T3, D3))
+treatment_data <- burn[burn$D2 == 1, c("id", "T2")]
+names(treatment_data) <- c("id", "tre_time")
+burntre_tv <- tmerge(burntre_tv, treatment_data, id= id, Tre = tdc(tre_time))
+coxtre_tv <- coxph(Surv(tstart, tstop, event) ~ Z1 + Z2 + Z3 + as.factor(Z11) + Tre + Z1:Tre, data = burntre_tv)
+summary(coxtre_tv)
+```
+The prophylactic antiobiotic treamtent effect (Tre) has an HR of 1.1709 (p = 0.7565), and the interaction Z1:Tre has an HR of 0.6465 (p = 0.5200), both non-significant, suggesting no strong evidence that prophylactic antiobiotic treatment modifies the treatment (Z1) effect.
+
+```{r}
+burn_tv <- tmerge(burn_tv, treatment_data, id= id, Tre = tdc(tre_time))
+cox_exc_tre_tv <- coxph(Surv(tstart, tstop, event) ~ Z1 + Z2 + Z3 + as.factor(Z11) + Exc + Tre, data = burn_tv)
+summary(cox_exc_tre_tv)
+```
+The excision effect (Exc) has an HR of 0.45403 (p = 0.1142) suggesting no strong evidence that excision is significant. The prophylactic antiobiotic treamtent effect (Tre) has an HR of 0.98477 (p = 0.9686) suggesting no strong evidence that prophylactic antiobiotic treatment after adjusting for excision is significant. 
+
 
 # 5 Conclusions
 
-Body cleansing significantly reduces the hazard of Staphylococcus aureus infection by 47.7% (HR = 0.523, 95% CI: 0.291–0.940, p = 0.030) compared to routine bathing, consistent across models. The time-varying model suggests excision does not significantly alter this effect. Race (HR = 9.850, 95% CI: 1.318–73.643, p = 0.026) and electric burns (HR = 7.901, p = 0.058) remain notable risk factors. PH violations for Z11 suggest future models could explore time-varying coefficients for burn type.
+Body cleansing significantly reduces the hazard of Staphylococcus aureus infection by 47.7% (HR = 0.523, 95% CI: 0.291–0.940, p = 0.030) compared to routine bathing, consistent across models. The time-varying models suggest that excision and prophylactic antibiotic treatment do not significantly alter this effect. Race (HR = 9.850, 95% CI: 1.318–73.643, p = 0.026) and electric burns (HR = 7.901, p = 0.058) remain notable risk factors. PH violations for Z11 suggest future models could explore time-varying coefficients for burn type.
 
 # Bibliography
 
@@ -160,3 +179,5 @@ Kassambala, A., Kosinski, M., & Biecek, P. (2021). survminer: Drawing Survival
   Curves using ggplot2. R package version 0.4.9.              https://CRAN.R-project.org/package=survminer
 
 R Core Team (2022). R: A Language and Environment for Statistical Computing. R   Foundation for Statistical Computing, Vienna, Austria.   https://www.R-project.org/
+
+Therneau, Terry, et al. Using Time Dependent Covariates and Time Dependent Coefficients in the Cox Model, 17 Dec. 2024, cran.r-project.org/web/packages/survival/vignettes/timedep.pdf. 
